@@ -42,7 +42,7 @@ def get_duplicates(path):
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-    	print("put a dirname please")
+    	print("Укажите путь к папке в качастве параметра скрипта")
     	exit()
 
     duplicates = get_duplicates(sys.argv[1])
