@@ -1,59 +1,45 @@
-#!/usr/local/bin/python3
 import sys
 import os
 
-def get_fies_in_path(path):
-    files_list = list()
+
+def get_fies_in_path(path, files_dict):
+
     for entry in os.scandir(path):
         if entry.is_file(follow_symlinks=False):
-            file_stat = (entry.path, entry.name, entry.stat().st_size)
-            files_list.append(file_stat)
+            file_stat_key = (entry.name, entry.stat().st_size)
+
+            if file_stat_key not in files_dict:
+                files_dict[file_stat_key] = []
+
+            files_dict[file_stat_key].append(entry.path)
+
         elif entry.is_dir(follow_symlinks=False):
-            files_list.extend(get_fies_in_path(entry.path))
-    return files_list
+            get_fies_in_path(entry.path, files_dict)
 
-
-def are_files_duplicates(file_stat1, file_stat2):
-    return file_stat1[1] == file_stat2[1] and file_stat1[2] == file_stat2[2]
-
-def get_duplicates_paths(files_list):
-    duplicates = list()
-
-    for file_stat1_num, file_stat1 in enumerate(files_list):
-        current_file_duplicates = list()
-        
-        for file_stat2 in files_list[file_stat1_num:]:
-            if are_files_duplicates(file_stat1, file_stat2):
-                current_file_duplicates.append(file_stat2)
-
-        if len(current_file_duplicates) > 1:
-            duplicates.append(current_file_duplicates)
-
-    return duplicates
 
 def get_duplicates(path):
+    files_dict = {}
     try:
-        files_list = get_fies_in_path(path)
+        get_fies_in_path(path, files_dict)
     except:
         return None
 
-    return get_duplicates_paths(files_list)
+    for file_stat_key in list(files_dict):
+        if len(files_dict[file_stat_key]) < 2:
+            del files_dict[file_stat_key]
+
+    return files_dict
 
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         print("Укажите путь к папке в качастве параметра скрипта")
-        exit()
+        exit(1)
 
-    duplicates = get_duplicates(sys.argv[1])
+    duplicates_dict = get_duplicates(sys.argv[1])
 
-    if not duplicates is None:
-        for block_of_duplicates in duplicates:
-            print("Имя файла:", block_of_duplicates[0][1], "Размер:", block_of_duplicates[0][2], "байт")
-            print("Дубликаты:")
-            for duplicate in block_of_duplicates:
-                print(duplicate[0])
-            print()
-    else:
-        print("Ошибка")
-
+    for file_stat, duplicates_list in duplicates_dict.items():
+        print("Имя:", file_stat[0], "Размер:", file_stat[1], "байт")
+        for duplicate_path in duplicates_list:
+            print(duplicate_path)
+        print()
